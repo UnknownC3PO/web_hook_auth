@@ -1,8 +1,8 @@
 import logging
-import db_app
-import config
-import messages
-import buttons
+import bot.db_app
+import bot.config
+import bot.messages
+import bot.buttons
 
 import aiogram.utils.markdown as md
 from aiogram import Bot, Dispatcher, types
