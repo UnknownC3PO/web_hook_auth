@@ -1,8 +1,8 @@
 import logging
-import bot.db_app
-import bot.config
-import bot.messages
-import bot.buttons
+from bot.db_app import *
+from bot.config import *
+from bot.messages import *
+from bot.buttons import *
 
 import aiogram.utils.markdown as md
 from aiogram import Bot, Dispatcher, types
@@ -36,26 +36,26 @@ class Form(StatesGroup):
 
 @dp.message_handler(commands='start')
 async def cmd_start(message: types.Message):
-    bot.db_app.reg_user(message.chat.id, None)
+    reg_user(message.chat.id, None)
     await Form.name.set()
     await message.reply(messages.auth_msg[0])
 
 
 @dp.message_handler(commands='name_update')
 async def name_update(message: types.Message):
-    bot.db_app.change_data(message.chat.id, message.text)
+    change_data(message.chat.id, message.text)
     await message.reply(messages.changed_msg[0])
 
 
 @dp.message_handler(commands='age_update')
 async def age_update(message):
-    bot.db_app.change_data(message.chat.id, message.text)
+    change_data(message.chat.id, message.text)
     await message.reply(messages.changed_msg[1])
 
 
 @dp.message_handler(commands='sex_update')
 async def age_update(message):
-    bot.db_app.change_data(message.chat.id, message.text)
+    change_data(message.chat.id, message.text)
     await message.reply(messages.changed_msg[2])
 
 
@@ -73,7 +73,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=Form.name)
 async def process_name(message: types.Message, state: FSMContext):
-    bot.db_app.reg_user(message.chat.id, message.text)
+    reg_user(message.chat.id, message.text)
     async with state.proxy() as data:
         data['name'] = message.text
 
@@ -95,7 +95,7 @@ async def process_age_invalid(message: types.Message):
 
 @dp.message_handler(lambda message: message.text.isdigit(), state=Form.age)
 async def process_age(message: types.Message, state: FSMContext):
-    bot.db_app.reg_user(message.chat.id, message.text)
+    reg_user(message.chat.id, message.text)
     await Form.next()
     await state.update_data(age=int(message.text))
 
@@ -135,7 +135,7 @@ async def answet_from_buttons(message: types.message):
 @dp.message_handler(state=Form.gender)
 async def process_gender(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        bot.db_app.reg_user(message.chat.id, message.text)
+        reg_user(message.chat.id, message.text)
         data['gender'] = message.text
         markup_inline = types.InlineKeyboardMarkup()
         main_menu = types.InlineKeyboardButton(text='menu', callback_data='menu')
