@@ -101,7 +101,7 @@ async def process_age(message: types.Message, state: FSMContext):
 @dp.message_handler(state='*', commands='BackToAge')
 async def process_age(message: types.Message):
     await Form.age.set()
-    await message.reply(messages.auth_msg[1], reply_markup=buttons.process_age())
+    await message.reply(messages.auth_msg[1], reply_markup=buttons.process_name_back())
 
 
 @dp.message_handler(lambda message: message.text not in ["Male", "Female", "Other"], state=Form.gender)
