@@ -1,6 +1,5 @@
 import logging
 import db
-import config
 import messages
 import buttons
 
