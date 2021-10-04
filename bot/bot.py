@@ -29,6 +29,10 @@ class Form(StatesGroup):
     gender = State()
 
 
+class Change(StatesGroup):
+    change = State()
+
+
 @dp.message_handler(commands='start')
 async def cmd_start(message: types.Message):
     db.reg_user(message.chat.id, None)
@@ -36,22 +40,15 @@ async def cmd_start(message: types.Message):
     await message.reply(messages.auth_msg[0])
 
 
-@dp.message_handler(commands='name_update')
-async def name_update(message: types.Message):
-    db.change_data(message.chat.id, message.text)
-    await message.reply(messages.changed_msg[0])
-
-
-@dp.message_handler(commands='age_update')
-async def age_update(message):
-    db.change_data(message.chat.id, message.text)
-    await message.reply(messages.changed_msg[1])
-
-
-@dp.message_handler(commands='sex_update')
-async def age_update(message):
-    db.change_data(message.chat.id, message.text)
-    await message.reply(messages.changed_msg[2])
+@dp.message_handler(state=Change.change)
+async def age_update(message: types.Message, state: FSMContext):
+    if message.text != 'Back to menu':
+        db.change_data(message.chat.id, message.text)
+        await message.reply(messages.changed_msg[0], reply_markup=buttons.menu_buttons())
+        await state.finish()
+    else:
+        await bot.send_message(message.chat.id, messages.select[0], reply_markup=buttons.menu_buttons())
+        await state.finish()
 
 
 @dp.message_handler(state='*', commands='cancel')
@@ -76,7 +73,7 @@ async def process_name(message: types.Message, state: FSMContext):
     await message.reply(messages.auth_msg[1], reply_markup=buttons.process_name_back())
 
 
-@dp.message_handler(state='*', commands='BackToName')
+@dp.message_handler(lambda message: message.text in ['Back to name'], state='*')
 async def process_age(message: types.Message):
     markup = types.ReplyKeyboardRemove()
     await Form.name.set()
@@ -97,7 +94,7 @@ async def process_age(message: types.Message, state: FSMContext):
     await message.reply(messages.auth_msg[2], reply_markup=buttons.process_age())
 
 
-@dp.message_handler(state='*', commands='BackToAge')
+@dp.message_handler(lambda message: message.text in ['Back to age'], state='*')
 async def process_age(message: types.Message):
     await Form.age.set()
     await message.reply(messages.auth_msg[1], reply_markup=buttons.process_name_back())
@@ -110,19 +107,28 @@ async def process_gender_invalid(message: types.Message):
 
 @dp.message_handler(lambda message: message.text)
 async def answet_from_buttons(message: types.message):
-    if message.text == '<About>':
-        await bot.send_message(message.chat.id, messages.register[0])
-    elif message.text == '<Settings>':
+    if message.text == 'About':
+        await bot.send_message(message.chat.id, db.about(message.chat.id))
+    elif message.text == 'Settings':
         await bot.send_message(message.chat.id, messages.settings[0], reply_markup=buttons.settings())
-    elif message.text == '<Change_name>':
-        await bot.send_message(message.chat.id, messages.change_help[0])
-    elif message.text == '<Change_age>':
-        await bot.send_message(message.chat.id, messages.change_help[1])
-    elif message.text == '<Change_gender>':
-        await bot.send_message(message.chat.id, messages.change_help[2])
-    elif message.text == '<Back>':
+    elif message.text == 'Change name':
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        await Change.change.set()
+        markup.add('Back to menu')
+        await bot.send_message(message.chat.id, messages.change_help[0], reply_markup=markup)
+    elif message.text == 'Change age':
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        await Change.change.set()
+        markup.add('Back to menu')
+        await bot.send_message(message.chat.id, messages.change_help[0], reply_markup=markup)
+    elif message.text == 'Change sex':
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        await Change.change.set()
+        markup.add('Back to menu')
+        await bot.send_message(message.chat.id, messages.change_help[0], reply_markup=markup)
+    elif message.text == 'Back':
         await bot.send_message(message.chat.id, messages.select[0], reply_markup=buttons.back())
-    elif message.text == '<Exit>':
+    elif message.text == 'Exit':
         markup = types.ReplyKeyboardRemove(selective=False)
         await bot.send_message(message.chat.id, messages.exit_from_menu[0], reply_markup=markup)
 
@@ -132,9 +138,6 @@ async def process_gender(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         db.reg_user(message.chat.id, message.text)
         data['gender'] = message.text
-        markup_inline = types.InlineKeyboardMarkup()
-        main_menu = types.InlineKeyboardButton(text='menu', callback_data='menu')
-        markup_inline.add(main_menu)
         await bot.send_message(
             message.chat.id,
             md.text(
@@ -143,7 +146,7 @@ async def process_gender(message: types.Message, state: FSMContext):
                 md.text('Gender:', data['gender']),
                 sep='\n',
             ),
-            reply_markup=buttons.enter_to_menu(),
+            reply_markup=buttons.menu_buttons(),
             parse_mode=ParseMode.MARKDOWN,
         )
 
