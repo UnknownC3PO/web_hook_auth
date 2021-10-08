@@ -45,8 +45,8 @@ async def cmd_start(message: types.Message):
 @dp.message_handler(state=[Change.change_name, Change.change_age, Change.change_gender])
 async def age_update(message: types.Message, state: FSMContext):
     if message.text != 'Back to menu':
-        k = await state.get_state()
-        if db.change_data(message.chat.id, message.text, k):
+        current_state = await state.get_state()
+        if db.change_data(message.chat.id, message.text, current_state):
             await message.reply(messages.changed_msg[0], reply_markup=buttons.menu_buttons())
             await state.finish()
         else:
@@ -88,6 +88,8 @@ async def process_age(message: types.Message, state: FSMContext):
     elif await state.get_state() == 'Form:gender':
         await Form.age.set()
         await message.reply(messages.auth_msg[1], reply_markup=buttons.process_name_back())
+    else:
+        await bot.send_message(message.chat.id, messages.select[0], reply_markup=buttons.menu_buttons())
 
 
 @dp.message_handler(lambda message: not message.text.isdigit(), state=Form.age)
@@ -111,7 +113,7 @@ async def process_gender_invalid(message: types.Message):
 
 
 @dp.message_handler(lambda message: message.text)
-async def answet_from_buttons(message: types.message):
+async def answer_from_buttons(message: types.message):
     if message.text == 'About':
         await bot.send_message(message.chat.id, db.about_user(message.chat.id))
     elif message.text == 'Settings':
@@ -125,8 +127,6 @@ async def answet_from_buttons(message: types.message):
     elif message.text == 'Change sex':
         await Change.change_gender.set()
         await bot.send_message(message.chat.id, messages.change_help[0], reply_markup=buttons.gender_back_menu())
-    elif message.text == 'Back':
-        await bot.send_message(message.chat.id, messages.select[0], reply_markup=buttons.back())
     elif message.text == 'Exit':
         markup = types.ReplyKeyboardRemove(selective=False)
         await bot.send_message(message.chat.id, messages.exit_from_menu[0], reply_markup=markup)
