@@ -56,10 +56,10 @@ def change_data(change_id, new_change, value_change):
                         user['sex'] = new_change
                     else:
                         return False
-                db_change.seek(0)
-                json.dump(users_data, db_change)
-                db_change.truncate()
-                return True
+                    db_change.seek(0)
+                    json.dump(users_data, db_change)
+                    db_change.truncate()
+                    return True
     except NameError:
         logging.exception('Error')
 
