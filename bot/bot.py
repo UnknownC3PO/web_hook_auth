@@ -70,12 +70,14 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=Form.name)
 async def process_name(message: types.Message, state: FSMContext):
-    db.reg_user(message.chat.id, message.text)
-    async with state.proxy() as data:
-        data['name'] = message.text
-
-    await Form.next()
-    await message.reply(messages.auth_msg[1], reply_markup=buttons.process_name_back())
+    if db.check_value(message.text):
+        db.reg_user(message.chat.id, message.text)
+        async with state.proxy() as data:
+            data['name'] = message.text
+        await Form.next()
+        await message.reply(messages.auth_msg[1], reply_markup=buttons.process_name_back())
+    else:
+        await message.reply(messages.error_data[1])
 
 
 @dp.message_handler(lambda message: message.text in ['Back'], state='*')
@@ -95,10 +97,12 @@ async def process_age_invalid(message: types.Message):
 
 @dp.message_handler(lambda message: message.text.isdigit(), state=Form.age)
 async def process_age(message: types.Message, state: FSMContext):
-    db.reg_user(message.chat.id, message.text)
-    await Form.next()
-    await state.update_data(age=int(message.text))
-    await message.reply(messages.auth_msg[2], reply_markup=buttons.process_age())
+    if db.reg_user(message.chat.id, message.text):
+        await Form.next()
+        await state.update_data(age=int(message.text))
+        await message.reply(messages.auth_msg[2], reply_markup=buttons.process_age())
+    else:
+        await message.reply(messages.wrong_msg[0])
 
 
 @dp.message_handler(lambda message: message.text not in ["Male", "Female", "Other"], state=Form.gender)
@@ -146,7 +150,6 @@ async def process_gender(message: types.Message, state: FSMContext):
         )
 
     await state.finish()
-
 
 
 async def on_startup(dp):
